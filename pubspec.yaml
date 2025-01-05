@@ -38,6 +38,9 @@ dependencies:
   cupertino_icons: ^1.0.2
   flutter_local_notifications: ^18.0.1
   shared_preferences: ^2.3.5
+  firebase_core: ^2.13.0
+  firebase_auth: ^4.6.0
+  cloud_firestore: ^4.8.0
 
 dev_dependencies:
   flutter_test:
