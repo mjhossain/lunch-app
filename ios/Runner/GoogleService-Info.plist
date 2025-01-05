@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>API_KEY</key>
+	<string>AIzaSyBszTfKXPFmoVK21KF1GY6ZbxSrHS0HUGI</string>
+	<key>GCM_SENDER_ID</key>
+	<string>209557508429</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>dev.mointech.lunch</string>
+	<key>PROJECT_ID</key>
+	<string>lunch-app-ea80e</string>
+	<key>STORAGE_BUCKET</key>
+	<string>lunch-app-ea80e.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:209557508429:ios:9d0e6592b6eb251591a704</string>
+</dict>
+</plist>
