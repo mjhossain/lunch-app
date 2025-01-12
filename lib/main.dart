@@ -1,84 +1,32 @@
 // main.dart
-import 'package:flutter/material.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import 'dart:convert';
 
-// Entry point of the application
-void main() async {
-  // Ensure Flutter bindings are initialized
-  WidgetsFlutterBinding.ensureInitialized();
-  // Initialize notification services
-  await initNotifications();
-  runApp(const LunchTimerApp());
+import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'pages/timer_page.dart';
+import 'pages/tasks_page.dart';
+import 'models/lunch_note.dart';
+
+void main() {
+  runApp(const MyApp());
 }
 
-// Initialize local notifications plugin with platform-specific settings
-Future<void> initNotifications() async {
-  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-  FlutterLocalNotificationsPlugin();
-  const AndroidInitializationSettings initializationSettingsAndroid =
-  AndroidInitializationSettings('@mipmap/ic_launcher');
-  const DarwinInitializationSettings initializationSettingsIOS =
-  DarwinInitializationSettings();
-  const InitializationSettings initializationSettings = InitializationSettings(
-    android: initializationSettingsAndroid,
-    iOS: initializationSettingsIOS,
-  );
-  await flutterLocalNotificationsPlugin.initialize(initializationSettings);
-}
-
-// Root widget of the application
-class LunchTimerApp extends StatelessWidget {
-  const LunchTimerApp({super.key});
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Lunch Timer',
-      // Configure light theme with Material 3
       theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.blue,
-          brightness: Brightness.light,
-        ),
-      ),
-      // Configure dark theme with Material 3
-      darkTheme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.blue,
-          brightness: Brightness.dark,
-        ),
       ),
       home: const HomePage(),
     );
   }
-}
-
-// Data model for lunch notes
-class LunchNote {
-  String text;
-  bool isCompleted;
-
-  LunchNote({
-    required this.text,
-    this.isCompleted = false,
-  });
-
-  // Convert note to JSON for storage
-  Map<String, dynamic> toJson() => {
-    'text': text,
-    'isCompleted': isCompleted,
-  };
-
-  // Create note from JSON storage
-  factory LunchNote.fromJson(Map<String, dynamic> json) => LunchNote(
-    text: json['text'],
-    isCompleted: json['isCompleted'],
-  );
 }
 
 class HomePage extends StatefulWidget {
@@ -249,19 +197,6 @@ class _HomePageState extends State<HomePage> {
     _saveNotes();
   }
 
-  // Format seconds into MM:SS
-  String _formatTime(int seconds) {
-    final minutes = seconds ~/ 60;
-    final remainingSeconds = seconds % 60;
-    return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
-  }
-
-  // Format clock out time
-  String _formatClockOutTime() {
-    if (_clockOutTime == null) return '';
-    return 'Clock out at: ${_clockOutTime!.hour.toString().padLeft(2, '0')}:${_clockOutTime!.minute.toString().padLeft(2, '0')}';
-  }
-
   // Add this method to reorder notes
   void _reorderNote(int oldIndex, int newIndex) {
     setState(() {
@@ -292,275 +227,54 @@ class _HomePageState extends State<HomePage> {
       body: IndexedStack(
         index: _currentIndex,
         children: [
-          // Timer Screen
-          SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Timer Container
-                Container(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    children: [
-                      // Timer Display
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            _formatTime(_remainingTime),
-                            style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                              fontSize: 56,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          if (_clockOutTime != null && _isRunning)
-                            Column(
-                              children: [
-                                Text(
-                                  'Clock out at:',
-                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                                  ),
-                                ),
-                                Text(
-                                  '${_clockOutTime!.hour.toString().padLeft(2, '0')}:${_clockOutTime!.minute.toString().padLeft(2, '0')}',
-                                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: Theme.of(context).colorScheme.primary,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Reminder at: ${_clockOutTime!.subtract(const Duration(minutes: 5)).hour.toString().padLeft(2, '0')}:${_clockOutTime!.subtract(const Duration(minutes: 5)).minute.toString().padLeft(2, '0')}',
-                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
-                                  ),
-                                ),
-                              ],
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 32),
-                      // Timer Controls
-                      if (!_isRunning)
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.remove),
-                              onPressed: () {
-                                setState(() {
-                                  if (_lunchDuration > 15) {
-                                    _lunchDuration -= 5;
-                                  }
-                                });
-                              },
-                            ),
-                            Text(
-                              '$_lunchDuration min',
-                              style: Theme.of(context).textTheme.titleLarge,
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.add),
-                              onPressed: () {
-                                setState(() {
-                                  _lunchDuration += 5;
-                                });
-                              },
-                            ),
-                          ],
-                        ),
-                      const SizedBox(height: 24),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          if (_isRunning)
-                            IconButton(
-                              icon: const Icon(Icons.pause),
-                              iconSize: 36,
-                              onPressed: () {
-                                _timer?.cancel();
-                                setState(() {
-                                  _pauseTime = DateTime.now();
-                                  _isRunning = false;
-                                });
-                              },
-                            ),
-                          const SizedBox(width: 16),
-                          FilledButton.icon(
-                            icon: Icon(_isRunning ? Icons.stop : Icons.play_arrow),
-                            label: Text(_isRunning ? 'Stop' : _pauseTime != null ? 'Resume' : 'Start'),
-                            onPressed: _isRunning ? () {
-                              _timer?.cancel();
-                              setState(() {
-                                _isRunning = false;
-                                _showRefresher = false;
-                                _clockOutTime = null;
-                                _pauseTime = null;
-                                _pausedDuration = null;
-                              });
-                            } : () {
-                              if (_pauseTime != null) {
-                                // Calculate paused duration
-                                _pausedDuration = DateTime.now().difference(_pauseTime!);
-                                // Adjust clock out time
-                                _clockOutTime = _clockOutTime!.add(_pausedDuration!);
-                              }
-                              _startTimer();
-                            },
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-                // Add Task Section
-                Container(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surface,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      TextField(
-                        controller: _notesController,
-                        decoration: InputDecoration(
-                          labelText: 'Add a task',
-                          suffixIcon: IconButton(
-                            icon: const Icon(Icons.add),
-                            onPressed: _addNote,
-                          ),
-                        ),
-                        onSubmitted: (value) => _addNote(),
-                      ),
-                      const SizedBox(height: 16),
-                      // Show top 3 tasks
-                      if (_notes.isNotEmpty)
-                        Column(
-                          children: _notes.take(3).map((note) => ListTile(
-                            leading: Checkbox(
-                              value: note.isCompleted,
-                              onChanged: (value) {
-                                _toggleNoteCompletion(_notes.indexOf(note));
-                              },
-                            ),
-                            title: Text(
-                              note.text,
-                              style: note.isCompleted
-                                  ? TextStyle(
-                                decoration: TextDecoration.lineThrough,
-                                color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
-                              )
-                                  : null,
-                            ),
-                          )).toList(),
-                        ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+          TimerPage(
+            remainingTime: _remainingTime,
+            clockOutTime: _clockOutTime,
+            isRunning: _isRunning,
+            pauseTime: _pauseTime,
+            lunchDuration: _lunchDuration,
+            notesController: _notesController,
+            notes: _notes,
+            onStart: _startTimer,
+            onStop: () {
+              _timer?.cancel();
+              setState(() {
+                _isRunning = false;
+                _showRefresher = false;
+                _clockOutTime = null;
+                _pauseTime = null;
+                _pausedDuration = null;
+              });
+            },
+            onPause: () {
+              _timer?.cancel();
+              setState(() {
+                _pauseTime = DateTime.now();
+                _isRunning = false;
+              });
+            },
+            onDecrementDuration: () {
+              setState(() {
+                if (_lunchDuration > 15) {
+                  _lunchDuration -= 5;
+                }
+              });
+            },
+            onIncrementDuration: () {
+              setState(() {
+                _lunchDuration += 5;
+              });
+            },
+            onAddNote: _addNote,
+            onToggleNoteCompletion: _toggleNoteCompletion,
           ),
-          // Tasks Screen
-          SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Notes Card
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Text(
-                          'Lunch Notes',
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        const SizedBox(height: 16),
-                        TextField(
-                          controller: _notesController,
-                          decoration: InputDecoration(
-                            hintText: 'Add a note...',
-                            suffixIcon: IconButton(
-                              icon: const Icon(Icons.add),
-                              onPressed: _addNote,
-                            ),
-                          ),
-                          onSubmitted: (_) => _addNote(),
-                        ),
-                        const SizedBox(height: 16),
-                        ReorderableListView.builder(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: _notes.length,
-                          itemBuilder: (context, index) {
-                            return Dismissible(
-                              key: Key(_notes[index].text),
-                              onDismissed: (direction) {
-                                setState(() {
-                                  _notes.removeAt(index);
-                                });
-                                _saveNotes();
-                              },
-                              background: Container(
-                                color: Colors.red,
-                                alignment: Alignment.centerRight,
-                                padding: const EdgeInsets.only(right: 16),
-                                child: const Icon(
-                                  Icons.delete,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              child: ListTile(
-                                key: ValueKey(_notes[index]),
-                                leading: Checkbox(
-                                  value: _notes[index].isCompleted,
-                                  onChanged: (_) => _toggleNoteCompletion(index),
-                                ),
-                                title: Text(
-                                  _notes[index].text,
-                                  style: TextStyle(
-                                    decoration: _notes[index].isCompleted
-                                        ? TextDecoration.lineThrough
-                                        : null,
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                          onReorder: _reorderNote,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
+          TasksPage(
+            notesController: _notesController,
+            notes: _notes,
+            onAddNote: _addNote,
+            onToggleNoteCompletion: _toggleNoteCompletion,
+            onClearAllNotes: _clearAllNotes,
+            onReorderNote: _reorderNote,
           ),
         ],
       ),
